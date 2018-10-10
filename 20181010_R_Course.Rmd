@@ -259,6 +259,23 @@ data.df_f %>% filter(continent %in% c("Europe","Africa") & year==1997) %>%
   theme_bw()
 ```
 
+Write to Excel file
+```{r}
+data.df_f %>% filter(continent %in% c("Europe","Africa") & year==1997) %>% 
+  write.xlsx("filtered_gapminder.xlsx")
+```
+
+Read Excel with tidyverse
+```{r}
+dat_excel <- readxl::read_excel("filtered_gapminder.xlsx")
+```
+
+Misc.
+```{r eval=FALSE, include=FALSE}
+#Package for reproducible examples
+library(reprex)
+```
+
 
 
 
