@@ -1,0 +1,254 @@
+---
+title: "R Course"
+author: "R Spitzer"
+date: "10/10/2018"
+output: 
+  html_document: 
+    code_folding: hide
+    highlight: monochrome
+    keep_md: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 5
+    toc_float: yes
+editor_options: 
+  chunk_output_type: console
+---
+**Set Java**
+```{r}
+#Sys.setenv(JAVA_HOME="C:\\Program Files\\Java\\jre1.8.0_181")
+Sys.setenv(JAVA_HOME="C:/Program Files/Java/jre1.8.0_181")
+#Sys.getenv("JAVA_HOME")
+```
+
+**Libraries**
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(xlsx)
+```
+
+#Data
+```{r}
+#data.df <- read.csv(file.path("C:\\Robert\\testrun\\data","gapminder_data.csv"))
+data.df <- read_csv("data/gapminder_data.csv")
+```
+
+#Playing with the data
+```{r}
+str(data.df)
+
+data.df_f <- data.df %>% 
+  mutate_if(sapply(data.df, is.character), as.factor)
+
+glimpse(data.df)
+glimpse(data.df_f)
+```
+
+#DF and a List
+```{r}
+names <- c("Robert","Linda","Julia")
+my_df <- data.frame(f_names = names,
+                    my_nums = c(30,75,50),
+                    my_lgl = c(TRUE,FALSE,TRUE),
+                    stringsAsFactors = F)
+my_df
+```
+
+#Dplyr
+```{r}
+data.df_f %>% filter(year == 1952) %>% 
+  select(country, population = pop) %>% 
+  arrange(population)
+
+data.df_f %>% filter(year == 1952) %>% 
+  select(country, population = pop) %>% 
+  arrange(desc(population))
+
+#National GDP pop*gdpPercap
+data.df_f %>% mutate(N_GDP = pop*gdpPercap) -> data.df_f
+
+data.df_f 
+```
+
+#Summaries
+```{r}
+data.df_f %>% filter(year==2007) %>% 
+  group_by(continent) %>% 
+  summarise(AvgLE=mean(lifeExp),
+            SD = sd(lifeExp))
+
+#Summarize Median gdp by continent in 2007
+data.df_f %>% filter(year==2007) %>% 
+  mutate(N_GDP = pop*gdpPercap) %>% 
+  group_by(continent) %>% 
+  summarise(MedianGDP=median(N_GDP))
+
+data.df_f %>% filter(continent=="Oceania") %>% 
+  distinct(country)
+```
+
+#Functions
+
+##if / else
+```{r}
+x <- 15
+
+if(x>=10){
+  paste("x is greater than or equal to 10; it is:",x)
+} else {
+  print("x is less than 10")
+}
+```
+
+##loops
+```{r}
+for(i in 1:10) {
+  print(i)
+}
+```
+
+##nested loop
+```{r}
+for(i in 1:5) {
+  for(j in c("a","b","c","d","e")) {
+    print(paste(i,j))
+    
+  }
+}
+```
+
+##Roll dice function
+```{r}
+#Step 1 (Menu -> Code -> extract function)
+##Function to roll 6 sided dice only
+roll <- function() {
+  die <- 1:6
+  dice <- sample(die, size = 2, replace = T) # size=2, sample twice
+  sum(dice)
+}
+
+#roll()
+
+#Step 2 Function to roll two 6-sided dice of any size
+roll_n <- function(die_n = 1:6) {
+  dice <- sample(die_n, size = 2, replace = T)
+  sum(dice)
+}
+
+roll_n(1:15)
+```
+
+##Load dice function using source
+```{r}
+source("data/dice-function.R")
+roll_n()
+
+#source("path/dice-function.R")
+```
+
+##Gapminder function to get GDP for specific Year and/or Country
+```{r}
+calcGDP <- function(dat, input_yr = NULL, ctry = NULL)
+{
+  #Is there a year argument?
+  if(!is.null(input_yr)) {
+    dat <- dat %>% 
+      filter(year == input_yr)
+  }
+  #Is there a country argument?
+  if(!is.null(ctry)) {
+    dat <- dat %>% 
+      filter(country == ctry)
+  }
+  new_dat <- dat %>% 
+    mutate(gdp = pop*gdpPercap)
+  return(new_dat)
+}
+
+calcGDP(data.df, input_yr=1952, ctry = "Sweden")
+Ger_1952 <- calcGDP(data.df, input_yr=1952, ctry = "Germany")
+View(Ger_1952)
+
+calcGDP(data.df, input_yr = 1952) %>% View()
+calcGDP(data.df, NULL, "Germany") %>% View()
+```
+
+#Plots
+```{r}
+ggplot(data.df_f, aes(continent,lifeExp)) +
+  geom_boxplot() +
+  theme_bw()
+
+ggplot(data.df_f, aes(continent,gdpPercap)) +
+  geom_boxplot() +
+  theme_bw()
+
+ggplot(data.df_f, aes(log(gdpPercap),log(N_GDP), color=continent)) +
+  geom_point() +
+  theme_bw()
+
+ggplot(data.df_f, aes(year,log(N_GDP), color=continent)) +
+  #geom_point() +
+  stat_smooth(method = 'loess') +
+  theme_bw()
+
+ggplot(data.df_f, aes(factor(year),log(N_GDP))) +
+  geom_boxplot() +
+  stat_smooth(aes(group=1),method = 'loess') +
+  theme_bw() +
+  facet_wrap(~continent)
+```
+
+#...more Plots
+```{r}
+data.df_f %>% ggplot(aes(year,log(N_GDP), color=continent)) + 
+  stat_smooth(method = 'loess') +
+  theme_bw()
+```
+
+Plot populations European countries in 1997 as bar plot
+```{r}
+data.df_f %>% filter(continent=="Europe" & year==1997) %>% 
+  ggplot(aes(country,pop)) + 
+  geom_bar(stat="identity") + 
+  geom_smooth(aes(group=1),method = "loess", se=F) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Re-plot with ordering country according to population and add life expectancy
+```{r}
+data.df_f %>% filter(continent=="Europe" & year==1997) %>% 
+  ggplot(aes(x= fct_reorder(country,pop), y=pop, fill=lifeExp)) + 
+  geom_bar(stat="identity") +
+  coord_flip() +
+  theme_bw()
+```
+
+```{r}
+data.df_f %>% ggplot(aes(fct_reorder(continent,lifeExp),lifeExp)) +
+  geom_boxplot(outlier.color = "blue") +
+  geom_jitter(position=position_jitter(width = .1,
+                                       height = 0),
+              alpha=.25) +
+  theme_bw()
+```
+
+```{r}
+data.df_f %>% filter(continent!="Oceania") %>% ggplot(aes(year, lifeExp, color=country)) +
+  geom_line() +
+  theme_classic() +
+  facet_wrap(~continent) +
+  theme(legend.position="none")
+```
+
+
+
+
+
+
+
+
+
+
+
