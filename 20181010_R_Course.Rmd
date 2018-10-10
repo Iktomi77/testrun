@@ -242,6 +242,22 @@ data.df_f %>% filter(continent!="Oceania") %>% ggplot(aes(year, lifeExp, color=c
   theme(legend.position="none")
 ```
 
+Heatmap
+```{r}
+data.df_f %>% ggplot(aes(continent,year, fill=lifeExp)) +
+  geom_tile()
+```
+
+Bubble plot - Life expectancy Europe/Africa/GDP in 1997
+```{r}
+data.df_f %>% filter(continent %in% c("Europe","Africa") & year==1997) %>% 
+  mutate(gdp=pop*gdpPercap) %>% 
+  ggplot(aes(x=gdp, y=lifeExp,
+             colour = continent, size=lifeExp)) +
+  geom_point() +
+  scale_x_log10() +
+  theme_bw()
+```
 
 
 
